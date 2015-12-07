@@ -10,3 +10,5 @@ control c1(N,clk,f,timing,signal,sc_clr);
 timing t1(clk,sc_clr,T);
 instructionDecoder i1(IR,f);  
 endmodule
+
+// This is comment
