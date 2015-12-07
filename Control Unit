@@ -1,0 +1,168 @@
+module control(N,clk,f,timing,signal,sc_clr);
+ input N;
+ input [7:0] f;
+ input clk;
+ output reg [15:0] signal ;
+  wire [15:0] data_in;
+  reg [15:0] data_out;
+  output reg sc_clr;
+  reg [2:0] sel;
+ input [5:0] timing;
+  
+    reg[15:0]bus;
+    reg[15:0]DR;
+    reg[15:0]AC;
+    reg[15:0]IR;
+    reg[11:0]AR;
+    reg[11:0]PC;
+    
+    reg DR_LD, AR_LD, PC_LD, AC_LD, IR_LD;
+    reg PC_INR;
+    reg  Mem_wr ,Mem_read , HLT_en;
+    reg ALU_func_add,ALU_func_dr,ALU_func_sub;
+    reg [15:0]ALU_out;
+    
+    
+
+
+
+  always@(sel)
+  
+  begin
+    
+    if (sel==3'd1)
+      bus<={4'b0000,AR};
+    else if (sel==3'd2)
+      bus<={4'b0000,PC};
+    else if (sel==3'd3)
+      bus<=DR;
+    else if (sel==3'd4)
+      bus<=AC;
+    else if (sel==3'd5)
+      bus<=IR;
+    else if (sel==3'd7)
+      bus<=data_in; //input from Memory
+    
+  
+    end 
+  
+    
+    always@(posedge clk)
+    begin
+      if (DR_LD==1)
+        DR<=bus;
+     if (AR_LD==1)
+        AR<=bus[11:0];
+      if (PC_LD==1)
+        PC<=bus[11:0];
+      else if (PC_INR==1)
+        PC<=PC+1;
+      if (AC_LD==1)
+        AC<=ALU_out;
+      if (IR_LD==1)
+        IR<=bus;
+      if(Mem_wr==1)
+        data_out<=bus; //data_out:output to memory
+
+      end
+
+    
+    always@(timing)
+
+    begin
+    {DR_LD, AR_LD, PC_LD, AC_LD, IR_LD,PC_INR,sc_clr}=0;
+
+ //T0: AR<-PC
+    if(timing[0])
+      begin
+      sel<=3'd2;
+      AR_LD<=1;
+      signal<=16'b0100000001000000;
+      end
+ //T1: IR<-Mem [AR],PC<-PC+1
+    else if(timing[1])
+        begin
+          Mem_read<=1;
+          //ADRS<=AR
+          sel<=3'd7;
+          IR_LD<=1;
+          PC_INR<=1;
+          signal<=16'b1110001000010010;
+        end
+ //T2:AR<-IR[11:0],Decode IR[15:12]
+     else if(timing[2])
+      begin
+      sel<=3'd5;
+      AR_LD<=1;
+      signal<=16'b1010000001000000;
+      end
+ //T3
+  else if (timing[3])
+      
+  begin
+       if(f[7:0]==4 || f[7:0]==3 ||f[7:0]==1)
+         begin
+          //DR<=mem[ar]
+          Mem_read<=1;
+          sel<=3'd7;
+          DR_LD<=1;
+          end
+        else if(f[7:0]==2)
+            begin
+              sel<=3'd4;
+              Mem_wr<=1;
+              sc_clr<=1;
+             // signal<=
+            end
+        else if(f[7:0]==6)
+          begin
+          sel<=3'd5;
+          PC_LD<=1;
+          sc_clr<=1;
+        end
+         else if(f[7:0]==7)
+          begin
+            if(N)
+              begin
+          sel<=3'd5;
+          PC_LD<=1;
+              end
+          sc_clr<=1;
+          end
+         else 
+            begin
+              HLT_en<=1;
+              sc_clr<=1;
+            end
+end
+  //T4:
+  else if(timing[4])
+      begin
+          if(f[7:0]==1)
+            ALU_func_dr<=1;//AC<-DR
+            
+        else if(f[7:0]==4)
+            ALU_func_sub<=1;
+            //ALU_out<=AC - DR;
+        else if(f[7:0]==3)
+            begin
+            ALU_func_add<=1;
+            //ALU_out<=AC + DR;
+          end
+
+       end
+          
+ else if(timing[5])
+   begin
+            if(f[7:0]==4 || f[7:0]==3 ||f[7:0]==1)
+            begin
+            AC_LD<=1;
+            sc_clr<=1;
+            //adrs<=PC;
+            end
+   end
+          
+              
+end
+endmodule
+              
