@@ -1,0 +1,12 @@
+module complete();
+  wire N,clk,sc_clr;
+  wire [5:0] T;
+  wire [7:0] f;
+  wire [15:0] signal ;
+  wire [5:0] timing;
+  wire [15:0] IR;
+
+control c1(N,clk,f,timing,signal,sc_clr);
+timing t1(clk,sc_clr,T);
+instructionDecoder i1(IR,f);  
+endmodule
