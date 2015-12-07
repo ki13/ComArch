@@ -1,0 +1,15 @@
+module instructionDecoder(IR,f);
+input [15:0] IR;
+output [7:0] f;
+reg [7:0] f;
+ integer i;
+always @(IR)
+  begin
+for (i=0;i<8;i=i+1)
+    if (IR[15:12]==i)
+    f[i]=1;
+    else f[i]=0;
+
+end  
+  endmodule   
+              
